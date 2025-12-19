@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Mahasiswa Pro</title>
+    <title>Dashboard Mahasiswa</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -11,18 +11,32 @@
 </head>
 <body>
 
-    <div class="container py-5">
-        <div class="header-section text-center mb-5">
-             <div class="row justify-content-center mb-3">
-    <div class="col-md-10 d-flex justify-content-start">
-        <div class="stats-card p-2 px-4 shadow-sm" style="background: white; border-radius: 12px;">
-            <span class="text-secondary small fw-bold">TOTAL MAHASISWA: </span>
-            <span id="totalStudents" class="fw-bold text-primary">0</span>
+    <div id="loginSection" class="container py-5">
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-4">
+                <div class="main-card p-4 text-center">
+                    <h2 class="fw-bold mb-4"><i class="fas fa-lock me-2 text-primary"></i>Login Admin</h2>
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <input type="email" id="loginEmail" class="form-control" placeholder="Email Admin" required>
+                        </div>
+                        <div class="mb-4">
+                            <input type="password" id="loginPassword" class="form-control" placeholder="Password" required>
+                        </div>
+                        <button type="submit" class="btn btn-action w-100">Masuk Dashboard</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
-</div>
+
+    <div id="mainDashboard" class="container py-5" style="display: none;">
+        <div class="header-section text-center mb-5">
             <h1 class="fw-bold"><i class="fas fa-graduation-cap me-2"></i>Data Mahasiswa</h1>
-            <p class="text-secondary">TUGAS PEMBUATAN APLIKASI SEDERHANA (RASHAD DWI RESPATI)</p>
+            <p class="text-secondary">Kelola data akademik dengan cepat dan aman</p>
+            <button id="logoutBtn" class="btn btn-sm btn-outline-danger mt-2">
+                <i class="fas fa-sign-out-alt"></i> Keluar (Logout)
+            </button>
         </div>
         
         <div class="row justify-content-center mb-5">
@@ -31,17 +45,11 @@
                     <form id="studentForm" class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Nama Lengkap</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-user"></i></span>
-                                <input type="text" id="name" class="form-control" placeholder="Nama Mahasiswa" required>
-                            </div>
+                            <input type="text" id="name" class="form-control" placeholder="Nama Mahasiswa" required>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">NIM</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-id-card"></i></span>
-                                <input type="number" id="nim" class="form-control" placeholder="Nomor Induk" required>
-                            </div>
+                            <input type="number" id="nim" class="form-control" placeholder="Nomor Induk" required>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Jurusan</label>
@@ -49,13 +57,10 @@
                                 <option value="Informatika">Informatika</option>
                                 <option value="Sistem Informasi">Sistem Informasi</option>
                                 <option value="Teknik Elektro">Teknik Elektro</option>
-                                <option value="Desain Komunikasi Visual">DKV</option>
                             </select>
                         </div>
                         <div class="col-md-2 d-flex align-items-end">
-                            <button type="submit" id="submitBtn" class="btn btn-action w-100">
-                                <i class="fas fa-plus me-1"></i> Simpan
-                            </button>
+                            <button type="submit" id="submitBtn" class="btn btn-action w-100">Simpan</button>
                         </div>
                     </form>
                 </div>
@@ -65,7 +70,7 @@
         <div class="row justify-content-center">
             <div class="col-md-10">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0 fw-bold">Daftar Mahasiswa</h5>
+                    <h5 class="mb-0 fw-bold">Total: <span id="totalStudents" class="text-primary">0</span> Mahasiswa</h5>
                     <div class="search-box">
                         <i class="fas fa-search"></i>
                         <input type="text" id="searchInput" placeholder="Cari nama atau NIM...">
@@ -74,7 +79,7 @@
 
                 <div class="table-container shadow-sm">
                     <table class="table table-borderless align-middle mb-0">
-                        <thead>
+                        <thead class="table-light">
                             <tr>
                                 <th class="ps-4">NIM</th>
                                 <th>Mahasiswa</th>
@@ -82,8 +87,7 @@
                                 <th class="text-center">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="studentTableBody">
-                            </tbody>
+                        <tbody id="studentTableBody"></tbody>
                     </table>
                 </div>
             </div>
