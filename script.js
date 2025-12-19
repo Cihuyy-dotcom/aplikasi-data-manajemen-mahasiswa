@@ -2,6 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+// --- KONFIGURASI FIREBASE ---
 const firebaseConfig = {
     apiKey: "AIzaSyCBFJkOThg9i41v9fiI68rOYc74oilVHg4",
     authDomain: "aplikasi-data-mahasiswa-c84ab.firebaseapp.com",
@@ -13,13 +14,13 @@ const firebaseConfig = {
     measurementId: "G-WLPLBRX4PL"
 };
 
-// Initialize Firebase
+// Inisialisasi Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 const dbRef = ref(db, 'mahasiswa');
 
-// Elements
+// Elemen UI
 const loginSection = document.getElementById('loginSection');
 const mainDashboard = document.getElementById('mainDashboard');
 const loginForm = document.getElementById('loginForm');
@@ -28,68 +29,97 @@ const studentForm = document.getElementById('studentForm');
 const studentTableBody = document.getElementById('studentTableBody');
 const totalElement = document.getElementById('totalStudents');
 const submitBtn = document.getElementById('submitBtn');
+const searchInput = document.getElementById('searchInput');
 
 let editId = null;
 
-// --- A. AUTHENTICATION LOGIC ---
+// ==========================================
+// 1. LOGIKA AUTENTIKASI (LOGIN/LOGOUT)
+// ==========================================
 
-// Login
+// Proses Login
 loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
+
     signInWithEmailAndPassword(auth, email, password)
-        .then(() => loginForm.reset())
+        .then(() => {
+            loginForm.reset();
+            console.log("Login berhasil");
+        })
         .catch(err => alert("Login Gagal: " + err.message));
 });
 
-// Logout
-logoutBtn.addEventListener('click', () => signOut(auth));
+// Proses Logout
+logoutBtn.addEventListener('click', () => {
+    signOut(auth).then(() => {
+        console.log("Berhasil keluar");
+    });
+});
 
-// Pantau Status Login
+// Pantau Status Login (Session)
 onAuthStateChanged(auth, (user) => {
     if (user) {
+        // Jika login sukses
         loginSection.style.display = 'none';
         mainDashboard.style.display = 'block';
-        loadData(); // Load data hanya jika login
+        initRealtimeDatabase(); // Aktifkan listener database
     } else {
+        // Jika belum login / logout
         loginSection.style.display = 'block';
         mainDashboard.style.display = 'none';
     }
 });
 
-// --- B. DATABASE LOGIC (CRUD) ---
 
-function loadData() {
+// ==========================================
+// 2. LOGIKA DATABASE (CRUD & SORTING)
+// ==========================================
+
+function initRealtimeDatabase() {
     onValue(dbRef, (snapshot) => {
         studentTableBody.innerHTML = '';
         const data = snapshot.val();
         
         if (data) {
-            const count = Object.keys(data).length;
-            totalElement.innerText = count;
+            // KONVERSI OBJEK KE ARRAY UNTUK SORTING
+            const studentArray = Object.keys(data).map(id => {
+                return { id, ...data[id] };
+            });
 
-            Object.keys(data).forEach((id) => {
-                const s = data[id];
+            // LOGIKA SORTING OTOMATIS (Berdasarkan Nama A-Z)
+            studentArray.sort((a, b) => a.name.localeCompare(b.name));
+
+            // Update Total Angka
+            totalElement.innerText = studentArray.length;
+
+            // Render ke Tabel
+            studentArray.forEach((s) => {
                 const row = `
                     <tr>
                         <td class="ps-4 fw-bold text-primary">${s.nim}</td>
                         <td class="fw-semibold">${s.name}</td>
                         <td><span class="badge bg-light text-dark border">${s.major}</span></td>
                         <td class="text-center">
-                            <button class="btn-edit me-2" onclick="editData('${id}', '${s.name}', '${s.nim}', '${s.major}')"><i class="fas fa-edit"></i></button>
-                            <button class="btn-delete" onclick="deleteData('${id}')"><i class="fas fa-trash"></i></button>
+                            <button class="btn-edit me-2" onclick="editData('${s.id}', '${s.name}', '${s.nim}', '${s.major}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-delete" onclick="deleteData('${s.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </td>
                     </tr>`;
                 studentTableBody.innerHTML += row;
             });
         } else {
             totalElement.innerText = "0";
-            studentTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-3">Tidak ada data</td></tr>`;
+            studentTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-3 text-muted">Belum ada data mahasiswa</td></tr>`;
         }
     });
 }
 
+// Simpan atau Update Data
 studentForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const name = document.getElementById('name').value;
@@ -97,8 +127,10 @@ studentForm.addEventListener('submit', (e) => {
     const major = document.getElementById('major').value;
 
     if (editId === null) {
+        // Tambah Data Baru
         push(dbRef, { name, nim, major });
     } else {
+        // Simpan Perubahan (Update)
         update(ref(db, 'mahasiswa/' + editId), { name, nim, major });
         editId = null;
         submitBtn.innerText = "Simpan";
@@ -106,26 +138,34 @@ studentForm.addEventListener('submit', (e) => {
     studentForm.reset();
 });
 
-// Functions for buttons (Global Scope)
+
+// ==========================================
+// 3. FUNGSI GLOBAL (DAPAT DIAKSES OLEH HTML)
+// ==========================================
+
 window.deleteData = (id) => {
-    if (confirm("Hapus data ini?")) remove(ref(db, 'mahasiswa/' + id));
+    if (confirm("Apakah Anda yakin ingin menghapus data ini?")) {
+        remove(ref(db, 'mahasiswa/' + id));
+    }
 };
 
 window.editData = (id, name, nim, major) => {
     document.getElementById('name').value = name;
     document.getElementById('nim').value = nim;
     document.getElementById('major').value = major;
+    
     editId = id;
     submitBtn.innerText = "Update Data";
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// Fitur Cari
-document.getElementById('searchInput').addEventListener('input', (e) => {
-    const val = e.target.value.toLowerCase();
+// Fitur Pencarian Real-time
+searchInput.addEventListener('input', (e) => {
+    const keyword = e.target.value.toLowerCase();
     const rows = studentTableBody.getElementsByTagName('tr');
+    
     for (let row of rows) {
-        const text = row.innerText.toLowerCase();
-        row.style.display = text.includes(val) ? '' : 'none';
+        const textContent = row.innerText.toLowerCase();
+        row.style.display = textContent.includes(keyword) ? '' : 'none';
     }
 });
